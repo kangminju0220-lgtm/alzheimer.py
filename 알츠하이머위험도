@@ -1,0 +1,69 @@
+import math
+
+def get_survey_score(questions):
+    """질문 리스트를 받아 예(1)/아니요(0)를 입력받아 합계 반환"""
+    score = 0
+    for q in questions:
+        # 예(1) 혹은 아니요(0)로 답변
+        if input(f"{q} (예:1 / 아니요:0): ") == "1":
+            score += 1
+    return score
+
+def run_alzheimer_test():
+    print("=== 알츠하이머 위험도 자가진단 설문 ===")
+    
+    # 1. 기본 정보 입력 (a, b, c, d)
+    age = float(input("만 나이를 입력하세요: "))
+    gender = float(input("성별(여성:1, 남성:0): "))
+    family = float(input("가족력(있음:1, 없음:0): "))
+    cardio = float(input("심혈관 질환(있음:1, 없음:0): "))
+    
+    # 2. 인지 증상 상세 질문 (e~j 항목)
+    print("\n--- 인지 기능 설문 ---")
+    cognition_qs = {
+        "e(기억)": ["소지품을 자주 잃어버리나요?", "전화번호나 사람 이름을 잘 잊어버리나요?", "방금 한 말을 반복하거나 같은 질문을 반복하나요?", "자신의 이름, 얼굴, 가족의 얼굴을 알아보지 못하나요?"],
+        "f(언어)": ["물건의 이름이 금방 떠오르지 않나요?", "모호하게 돌려 말하거나 '그런 것' 같은 표현을 자주 사용하나요?", "말이나 글을 이해하는 능력이 떨어지고 메아리처럼 반복하나요?", "아무 말도 못 하게 되나요?"],
+        "g(실행)": ["근력이나 명령 이해에는 이상이 없나요?", "일상 동작(요리, 세수 등)에 장애가 보이나요?"],
+        "h(실인)": ["시력은 정상이나 사물을 구별하지 못하나요?", "가족이나 거울 속 자신을 인식하지 못하나요?"],
+        "i(시공간)": ["잘 알고 다니던 길에서 길을 잃나요?", "운전을 하거나 방향을 헤매나요?"],
+        "j(판단)": ["연속극 내용을 잘 이해하지 못하나요?", "시시콜콜한 이야기를 옆집에 다 하나요?", "돈 계산을 틀리게 하나요?"]
+    }
+    
+    cognition_sum = 0
+    for key, qs in cognition_qs.items():
+        # g 항목은 두 질문 모두 '예'일 때 1점 (민주 학생의 설계 반영)
+        if key == "g(실행)":
+            if get_survey_score(qs) == 2: cognition_sum += 1
+        else:
+            cognition_sum += get_survey_score(qs)
+        
+    # 3. 행동 및 심리 변화 설문 (k~n 항목)
+    print("\n--- 행동 및 심리 설문 ---")
+    behavior_qs = {
+        "k": ["거울 속 자신을 인식하지 못하거나 대화하나요?", "초조, 불안, 공격성이 증가했나요?"],
+        "l": ["우울한가요?"],
+        "m": ["사소한 일에도 화를 자주 내나요?", "쉽게 울거나 웃나요?"],
+        "n": ["밤에 안절부절못하고 배회하며 난폭해지나요?"]
+    }
+    
+    behavior_sum = 0
+    for key, qs in behavior_qs.items():
+        behavior_sum += get_survey_score(qs)
+        
+    # 4. 모델 수식 적용
+    # 나이에 따른 지수함수 가속도 설계
+    a = 2**((age - 65) / 5) if age >= 65 else 0
+    
+    # 최종 점수 S 산출
+    s_total = 0.5 * (a + gender + family + cardio) + \
+              (1 + 0.01 * age) * (1.2 * cognition_sum) + \
+              1.0 * behavior_sum
+    
+    # 5. 로그함수 기반 위험도 D(S) 정규화
+    s_max = 118.012
+    risk_d = (math.log10(1 + s_total) / math.log10(1 + s_max)) * 100
+    
+    print(f"\n[최종 결과] 당신의 알츠하이머 위험도는 {round(risk_d, 2)}% 입니다.")
+
+if __name__ == "__main__":
+    run_alzheimer_test()
